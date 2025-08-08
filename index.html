@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>College Result with Audio on Canvas</title>
+<style>
+  body {
+    margin: 0; padding: 20px;
+    background: #fff8e1;
+    display: flex; justify-content: center; align-items: flex-start;
+    height: 100vh;
+    font-family: Arial, sans-serif;
+  }
+  canvas {
+    border-radius: 15px;
+    box-shadow: 0 0 15px #FF8C00;
+    background: #3e1f00;
+  }
+  /* Hidden iframe to play YouTube audio */
+  #yt-audio {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    left: -9999px;
+    top: -9999px;
+    pointer-events: none;
+    border: none;
+  }
+</style>
+</head>
+<body>
+
+<canvas id="canvas" width="600" height="350"></canvas>
+
+<!-- Hidden iframe for YouTube Short audio -->
+<iframe id="yt-audio" 
+  src="" 
+  allow="autoplay" 
+  allowfullscreen
+  frameborder="0">
+</iframe>
+
+<script>
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+
+const orange = '#FF8C00';
+const yellow = '#FFD700';
+const darkBg = '#3e1f00';
+const white = '#fff';
+
+const question = "What will be your result based on your College name?";
+const colleges = [
+  "Scholarshome Majortila Collage",
+  "MC College",
+  "Modon Mohon College"
+];
+
+const answers = [
+  "A+ এর স্বপ্ন দেখা বাদ দেও খনিকের পোলা, তোমার দ্বারা হবেনা 😆",
+  "ছাত্রলীগ এর লিঙ্ক এ না ঢুকলে তুমি নিশ্চিত A+ নাইলে তুমি একটা খনিকের পোলা 🥰",
+  "এই মদন তোর সিলেবাস শেষ হইসে A+ এর স্বপ্ন যে দেখস, শালা মদন 🤬"
+];
+
+const youtubeShortsURL = "https://www.youtube.com/embed/rnrQgrfTlPU?autoplay=1&controls=0&loop=1&mute=0&playlist=rnrQgrfTlPU";
+
+const dropdown = {
+  x: 50,
+  y: 80,
+  width: 500,
+  height: 40,
+  open: false,
+  selectedIndex: null
+};
+
+function draw() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // Background
+  ctx.fillStyle = darkBg;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  // Question
+  ctx.fillStyle = yellow;
+  ctx.font = 'bold 24px Arial';
+  ctx.textAlign = 'center';
+  ctx.fillText(question, canvas.width / 2, 40);
+
+  // Dropdown box
+  ctx.fillStyle = orange;
+  ctx.fillRect(dropdown.x, dropdown.y, dropdown.width, dropdown.height);
+  ctx.strokeStyle = yellow;
+  ctx.lineWidth = 3;
+  ctx.strokeRect(dropdown.x, dropdown.y, dropdown.width, dropdown.height);
+
+  // Show selected or placeholder
+  ctx.fillStyle = white;
+  ctx.font = '20px Arial';
+  ctx.textAlign = 'left';
+  const displayText = dropdown.selectedIndex !== null ? colleges[dropdown.selectedIndex] : "Select your college";
+  ctx.fillText(displayText, dropdown.x + 15, dropdown.y + dropdown.height / 2 + 7);
+
+  // Dropdown arrow
+  ctx.fillStyle = white;
+  const arrowX = dropdown.x + dropdown.width - 30;
+  const arrowY = dropdown.y + dropdown.height / 2;
+  ctx.beginPath();
+  if (dropdown.open) {
+    ctx.moveTo(arrowX - 10, arrowY + 5);
+    ctx.lineTo(arrowX, arrowY - 5);
+    ctx.lineTo(arrowX + 10, arrowY + 5);
+  } else {
+    ctx.moveTo(arrowX - 10, arrowY - 5);
+    ctx.lineTo(arrowX, arrowY + 5);
+    ctx.lineTo(arrowX + 10, arrowY - 5);
+  }
+  ctx.closePath();
+  ctx.fill();
+
+  // Options if open
+  if (dropdown.open) {
+    for (let i = 0; i < colleges.length; i++) {
+      const optionY = dropdown.y + dropdown.height + i * dropdown.height;
+      ctx.fillStyle = (i === dropdown.selectedIndex) ? yellow : orange;
+      ctx.fillRect(dropdown.x, optionY, dropdown.width, dropdown.height);
+
+      ctx.fillStyle = (i === dropdown.selectedIndex) ? darkBg : white;
+      ctx.font = '20px Arial';
+      ctx.fillText(colleges[i], dropdown.x + 15, optionY + dropdown.height / 2 + 7);
+
+      ctx.strokeStyle = yellow;
+      ctx.lineWidth = 2;
+      ctx.strokeRect(dropdown.x, optionY, dropdown.width, dropdown.height);
+    }
+  }
+
+  // Answer box & text
+  if (dropdown.selectedIndex !== null) {
+    const boxX = 50;
+    const boxY = dropdown.y + dropdown.height * (dropdown.open ? colleges.length + 1 : 2);
+    const boxWidth = 500;
+    const boxHeight = 100;
+
+    ctx.fillStyle = orange;
+    ctx.fillRect(boxX, boxY, boxWidth, boxHeight);
+
+    ctx.strokeStyle = yellow;
+    ctx.lineWidth = 3;
+    ctx.strokeRect(boxX, boxY, boxWidth, boxHeight);
+
+    ctx.fillStyle = darkBg;
+    ctx.font = '22px Arial';
+    ctx.textAlign = 'left';
+
+    const padding = 15;
+    wrapText(ctx, answers[dropdown.selectedIndex], boxX + padding, boxY + 35, boxWidth - padding * 2, 28);
+  }
+}
+
+function wrapText(context, text, x, y, maxWidth, lineHeight) {
+  const words = text.split(' ');
+  let line = '';
+  for(let n = 0; n < words.length; n++) {
+    const testLine = line + words[n] + ' ';
+    const metrics = context.measureText(testLine);
+    const testWidth = metrics.width;
+    if (testWidth > maxWidth && n > 0) {
+      context.fillText(line, x, y);
+      line = words[n] + ' ';
+      y += lineHeight;
+    }
+    else {
+      line = testLine;
+    }
+  }
+  context.fillText(line, x, y);
+}
+
+const ytIframe = document.getElementById('yt-audio');
+
+canvas.addEventListener('click', (e) => {
+  const rect = canvas.getBoundingClientRect();
+  const mx = e.clientX - rect.left;
+  const my = e.clientY - rect.top;
+
+  // Click dropdown box
+  if (mx >= dropdown.x && mx <= dropdown.x + dropdown.width && my >= dropdown.y && my <= dropdown.y + dropdown.height) {
+    dropdown.open = !dropdown.open;
+    draw();
+    return;
+  }
+
+  // Click options if open
+  if (dropdown.open) {
+    for(let i=0; i < colleges.length; i++) {
+      const optionY = dropdown.y + dropdown.height + i * dropdown.height;
+      if (mx >= dropdown.x && mx <= dropdown.x + dropdown.width && my >= optionY && my <= optionY + dropdown.height) {
+        dropdown.selectedIndex = i;
+        dropdown.open = false;
+        draw();
+
+        // Handle YouTube audio iframe for 1st option
+        if (i === 0) {
+          ytIframe.src = youtubeShortsURL;
+        } else {
+          ytIframe.src = ''; // stop audio
+        }
+
+        return;
+      }
+    }
+  }
+
+  // Close dropdown if clicking outside
+  if (dropdown.open) {
+    dropdown.open = false;
+    draw();
+  }
+});
+
+draw();
+</script>
+
+</body>
+</html>
